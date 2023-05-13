@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEditor;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace Trev
 {
@@ -24,6 +25,8 @@ namespace Trev
         private RendererAction _combinedRendAction = RendererAction.Disable;
 
         private bool _logDebug = false;
+
+        private Regex _rootSceneRegex = new Regex("_\\(root.*?_?scene\\)");
 
         private string ProjectDirectory => Path.GetDirectoryName(Application.dataPath);
 
@@ -267,7 +270,13 @@ namespace Trev
                 Mesh mesh = null;
 
                 // Generate paths
-                string folderPath = Combine(_exportDirectory, filter.sharedMesh.name.Replace(' ', '_').Replace("_(root_scene)", ""));
+                string meshFileName = filter.sharedMesh.name.Replace(' ', '_');
+               
+                foreach (char c in Path.GetInvalidFileNameChars())
+                    meshFileName.Replace(c, '_');
+
+                meshFileName = _rootSceneRegex.Replace(meshFileName, "");
+                string folderPath = Combine(_exportDirectory, meshFileName);
 
                 string subMeshFileName = $"sub_{i}.asset";
                 string subMeshFilePath = Combine(folderPath, subMeshFileName);
