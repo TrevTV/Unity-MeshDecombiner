@@ -4,6 +4,8 @@ using UnityEditor;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using UnityEngine.SceneManagement;
+using UnityEditor.SceneManagement;
 
 namespace Trev
 {
@@ -199,6 +201,13 @@ namespace Trev
 
         private void Process(MeshRenderer mr, bool refreshAssetDatabase = false, bool throwNonCombinedWarning = true)
         {
+            // Safety when decombining multiple scenes
+            // Since different scenes can share combined mesh indexes, this will prevent overlap
+            string _exportDirectory = this._exportDirectory;
+
+            string sceneGuid = AssetDatabase.AssetPathToGUID(SceneManager.GetActiveScene().path);
+            _exportDirectory += $"{sceneGuid}/";
+
             if (!AssetDatabase.IsValidFolder(_exportDirectory))
                 // AssetDatabase.CreateFolder didn't work
                 Directory.CreateDirectory(Path.Combine(ProjectDirectory, _exportDirectory));
@@ -314,15 +323,27 @@ namespace Trev
                 // Generate children with decombined sub-mesh
                 GameObject childMesh = new GameObject($"SubMesh_{indexFromZero}");
                 childMesh.transform.parent = mr.transform;
-                MeshRenderer newRend = childMesh.AddComponent<MeshRenderer>();
-                MeshFilter newFilter = childMesh.AddComponent<MeshFilter>();
 
+                // Copy these components so all settings remain the same
+                UnityEditorInternal.ComponentUtility.CopyComponent(mr);
+                UnityEditorInternal.ComponentUtility.PasteComponentAsNew(childMesh);
+
+                var newRend = childMesh.GetComponent<MeshRenderer>();
+
+                UnityEditorInternal.ComponentUtility.CopyComponent(filter);
+                UnityEditorInternal.ComponentUtility.PasteComponentAsNew(childMesh);
+
+                var newFilter = childMesh.GetComponent<MeshFilter>();
+                
+                // Enable static batching
                 if (_setMeshesStatic)
                     childMesh.isStatic = true;
                 if (_resetPivot) // TODO: this is pretty broken, should probably figure out why
                     UpdatePivot(childMesh.transform, mesh);
 
-                newRend.sharedMaterial = mr.sharedMaterials[indexFromZero];
+                newRend.sharedMaterials = new Material[] {
+                    mr.sharedMaterials[indexFromZero],
+                };
                 newFilter.sharedMesh = mesh;
             }
 
