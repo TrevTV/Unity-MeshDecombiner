@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 using System.IO;
@@ -201,6 +201,10 @@ namespace Trev
 
         private void Process(MeshRenderer mr, bool refreshAssetDatabase = false, bool throwNonCombinedWarning = true)
         {
+            // Make sure this wasn't previously decombined
+            if (mr.GetComponent<DecombinedMeshScaleHolder>() || !mr.enabled || !mr.gameObject.activeInHierarchy)
+                return;
+
             // Safety when decombining multiple scenes
             // Since different scenes can share combined mesh indexes, this will prevent overlap
             string _exportDirectory = this._exportDirectory;
