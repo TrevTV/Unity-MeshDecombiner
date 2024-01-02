@@ -1,11 +1,10 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using UnityEngine.SceneManagement;
-using UnityEditor.SceneManagement;
 
 namespace Trev
 {
@@ -264,6 +263,10 @@ namespace Trev
                         newColliderHolder.transform.SetParent(mr.transform, false);
                         newColliderHolder.transform.localScale = originalScale;
 
+                        // Transfer GameObject settings like tags and layers
+                        newColliderHolder.tag = mr.gameObject.tag;
+                        newColliderHolder.layer = mr.gameObject.layer;
+
                         foreach (var c in colliders)
                         {
                             UnityEditorInternal.ComponentUtility.CopyComponent(c);
@@ -327,6 +330,10 @@ namespace Trev
                 // Generate children with decombined sub-mesh
                 GameObject childMesh = new GameObject($"SubMesh_{indexFromZero}");
                 childMesh.transform.parent = mr.transform;
+
+                // Transfer GameObject settings like tags and layers
+                childMesh.layer = mr.gameObject.layer;
+                childMesh.tag = mr.gameObject.tag;
 
                 // Copy these components so all settings remain the same
                 UnityEditorInternal.ComponentUtility.CopyComponent(mr);
